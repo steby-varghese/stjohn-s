@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Member Directory | Grace Connection</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#f0f9ff',
+                        accent: '#0284c7',
+                        secondary: '#e0f2fe',
+                    },
+                    fontFamily: {
+                        sans: ['Outfit', 'sans-serif'],
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 0.8s ease-out forwards',
+                        'slide-up': 'slideUp 0.6s ease-out forwards',
+                    },
+                    keyframes: {
+                        fadeIn: { '0%': { opacity: '0', transform: 'translateY(10px)' }, '100%': { opacity: '1', transform: 'translateY(0)' } },
+                        slideUp: { '0%': { opacity: '0', transform: 'translateY(20px)' }, '100%': { opacity: '1', transform: 'translateY(0)' } }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .glass { background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.3); }
+        .family-card { transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+        .family-card:hover { transform: translateY(-4px); box-shadow: 0 20px 40px -12px rgba(0, 0, 0, 0.1); }
+        body { background: #f0f9ff; scroll-behavior: smooth; }
+        
+        /* Modern Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    </style>
+</head>
+<body class="min-h-screen">
+    <!-- Simple Header -->
+    <header class="py-10 px-4 text-center">
+        <div class="inline-flex items-center gap-3 mb-4 cursor-pointer" onclick="window.location.href='/'">
+            <div class="bg-gradient-to-tr from-accent to-indigo-700 text-white p-2.5 rounded-2xl shadow-lg">
+                <i class="fas fa-church text-xl"></i>
+            </div>
+            <div class="text-left">
+                <h1 class="font-bold text-xl tracking-tight text-slate-800">Grace Connection</h1>
+                <p class="text-[10px] uppercase tracking-widest text-slate-400 font-extrabold -mt-1">Member Directory</p>
+            </div>
+        </div>
+    </header>
+
+    <!-- Directory Content -->
+    <div class="relative z-10">
+        <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-24 text-slate-800">
+            <!-- Search & Filter Area -->
+            <div class="max-w-4xl mx-auto mb-12 space-y-6 animate-fade-in glass p-6 sm:p-10 rounded-[2rem] sm:rounded-[3rem] shadow-2xl border border-white/60">
+                <!-- Search Bar -->
+                <div class="relative">
+                    <div class="absolute inset-y-0 left-0 pl-6 sm:pl-8 flex items-center pointer-events-none">
+                        <i class="fas fa-search text-slate-400"></i>
+                    </div>
+                    <input type="text" id="directory-search" onkeyup="filterDirectory()" placeholder="Find a family or member..." 
+                        class="w-full pl-14 sm:pl-18 pr-8 py-4 sm:py-5 bg-white/50 border-2 border-white rounded-2xl md:rounded-[2rem] outline-none focus:border-accent text-slate-800 text-base md:text-lg transition-all shadow-inner">
+                    
+                    <div class="absolute right-6 inset-y-0 hidden sm:flex items-center">
+                        <div class="px-3 py-1.5 rounded-xl bg-white/80 text-[10px] font-bold text-slate-400 uppercase tracking-widest border border-white/60">
+                            <span id="member-count">0</span> Members
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Filter Dropdown -->
+                <div class="flex justify-center">
+                    <div class="relative w-full max-w-xs group">
+                        <div class="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none text-accent">
+                            <i class="fas fa-pray"></i>
+                        </div>
+                        <select id="filter-dropdown" onchange="setFilter(this.value)" 
+                            class="w-full pl-12 pr-10 py-4 bg-white/50 border-2 border-white rounded-2xl shadow-lg shadow-blue-200/20 outline-none focus:border-accent text-slate-600 font-bold text-sm appearance-none cursor-pointer transition-all">
+                            <option value="all">All Prayer Groups</option>
+                        </select>
+                        <div class="absolute inset-y-0 right-0 pr-5 flex items-center pointer-events-none text-slate-300 group-hover:text-accent transition-colors">
+                            <i class="fas fa-chevron-down text-xs"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Grid Loader -->
+            <div id="loader" class="flex flex-col items-center justify-center py-32 space-y-4">
+                <div class="relative w-20 h-20">
+                    <div class="absolute inset-0 border-4 border-slate-100 rounded-full"></div>
+                    <div class="absolute inset-0 border-4 border-t-accent rounded-full animate-spin"></div>
+                </div>
+                <p class="text-slate-400 font-bold uppercase tracking-widest text-xs animate-pulse">Syncing Directory...</p>
+            </div>
+
+            <!-- Directory List -->
+            <div id="directory-grid" class="max-w-3xl mx-auto flex flex-col gap-4">
+                <!-- List items will be injected here -->
+            </div>
+
+            <!-- Empty State -->
+            <div id="empty-state" class="hidden flex flex-col items-center justify-center py-32 text-center">
+                <div class="bg-white p-8 rounded-full shadow-2xl mb-6">
+                    <i class="fas fa-users-slash text-5xl text-slate-200"></i>
+                </div>
+                <h3 class="text-2xl font-bold text-slate-800">No matches found</h3>
+                <p class="text-slate-500 mt-2">Try searching with a different name or family group.</p>
+            </div>
+        </main>
+    </div>
+
+    <!-- Family Detail Panel (Centered Modal) -->
+    <div id="family-panel-backdrop" class="fixed inset-0 z-[100] hidden items-center justify-center bg-blue-950/40 backdrop-blur-xl transition-opacity opacity-0 px-4 py-6" onclick="closeFamilyPanel()">
+        <div id="family-panel" class="relative w-full max-w-2xl max-h-full bg-sky-50 shadow-2xl rounded-[2.5rem] sm:rounded-[3rem] overflow-hidden transform scale-95 transition-all duration-300 ease-out flex flex-col" onclick="event.stopPropagation()">
+            <button onclick="closeFamilyPanel()" class="absolute top-4 right-4 sm:top-6 sm:right-6 z-20 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-black/20 backdrop-blur-md text-white flex items-center justify-center hover:bg-black/40 transition-all border border-white/10">
+                <i class="fas fa-times text-sm sm:text-xl"></i>
+            </button>
+            <div id="family-panel-content" class="flex-1 overflow-y-auto"></div>
+        </div>
+    </div>
+
+    <!-- Contact Modal (Glassmorphism Dark) -->
+    <div id="contact-modal" class="fixed inset-0 z-[110] hidden items-center justify-center p-4" onclick="closeContactModal()">
+        <div class="absolute inset-0 bg-slate-950/80 backdrop-blur-xl transition-opacity"></div>
+        <div class="relative w-full max-w-sm bg-slate-900 rounded-[2.5rem] sm:rounded-[3.5rem] shadow-[0_32px_64px_-12px_rgba(0,0,0,0.6)] overflow-hidden transform transition-all scale-95 opacity-0 duration-300 border border-white/10" id="modal-container" onclick="event.stopPropagation()">
+            <div class="relative h-60 sm:h-80 w-full bg-slate-950 flex items-center justify-center">
+                <img id="modal-photo" src="" class="absolute inset-0 w-full h-full object-cover blur-3xl opacity-40">
+                <img id="modal-photo-main" src="" class="relative w-full h-full object-contain">
+                <div class="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-transparent"></div>
+                <button onclick="closeContactModal()" class="absolute top-4 right-4 sm:top-6 sm:right-6 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-black/40 backdrop-blur-md text-white flex items-center justify-center hover:bg-black/60 transition-all border border-white/10">
+                    <i class="fas fa-times text-xs sm:text-base"></i>
+                </button>
+            </div>
+            <div class="relative z-10 px-6 sm:px-10 pb-8 sm:pb-12 -mt-12 sm:-mt-16 text-center">
+                <div class="inline-flex px-3 py-1 sm:px-4 sm:py-1.5 rounded-full bg-gradient-to-r from-accent to-indigo-400 text-white text-[9px] sm:text-[10px] font-black uppercase tracking-widest mb-4 sm:mb-6 shadow-xl shadow-accent/40 border border-white/20">Church Member</div>
+                <h3 id="modal-name" class="text-2xl sm:text-3xl font-black text-white tracking-tight"></h3>
+                <p id="modal-role" class="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-[0.3em] mt-2 sm:mt-3 mb-6 sm:mb-10"></p>
+                <div class="w-full space-y-3 sm:space-y-4">
+                    <a id="modal-call" href="#" class="w-full h-14 sm:h-16 flex items-center justify-center gap-3 sm:gap-4 rounded-[1.5rem] sm:rounded-3xl bg-white text-slate-900 font-black hover:bg-slate-100 transition-all active:scale-95 shadow-xl text-sm sm:text-base">
+                        <i class="fas fa-phone-alt text-accent"></i> Call Member
+                    </a>
+                    <a id="modal-mail" href="#" class="w-full h-14 sm:h-16 flex items-center justify-center gap-3 sm:gap-4 rounded-[1.5rem] sm:rounded-3xl bg-slate-800 text-white font-black hover:bg-slate-700 transition-all active:scale-95 border border-white/5 text-sm sm:text-base">
+                        <i class="fas fa-envelope text-indigo-400"></i> Send Message
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const baseUrl = window.location.protocol === 'file:' ? 'http://127.0.0.1:5000' : '';
+        let allMembers = [];
+        let currentFilter = 'all';
+
+        async function init() {
+            try {
+                const res = await fetch(`${baseUrl}/members`);
+                const data = await res.json();
+                allMembers = data;
+                document.getElementById('member-count').innerText = data.length;
+                document.getElementById('loader').classList.add('hidden');
+                generateFilters(data);
+                render(data);
+            } catch (err) {
+                console.error(err);
+                document.getElementById('loader').innerHTML = `<p class="text-rose-500">Failed to load directory. Please refresh.</p>`;
+            }
+        }
+
+        function generateFilters(members) {
+            const groups = [...new Set(members.map(m => m.prayer_group).filter(Boolean))];
+            const dropdown = document.getElementById('filter-dropdown');
+            dropdown.innerHTML = '<option value="all">All Prayer Groups</option>';
+            groups.sort().forEach(g => {
+                dropdown.innerHTML += `<option value="${g}">${g}</option>`;
+            });
+        }
+
+        function setFilter(val) {
+            currentFilter = val;
+            filterDirectory();
+        }
+
+        function filterDirectory() {
+            const query = document.getElementById('directory-search').value.toLowerCase();
+            const filtered = allMembers.filter(m => {
+                const matchesSearch = m.first_name.toLowerCase().includes(query) || 
+                                    (m.last_name && m.last_name.toLowerCase().includes(query)) ||
+                                    m.family_name.toLowerCase().includes(query);
+                const matchesFilter = currentFilter === 'all' || m.prayer_group === currentFilter;
+                return matchesSearch && matchesFilter;
+            });
+            render(filtered);
+        }
+
+        function render(members) {
+            const grid = document.getElementById('directory-grid');
+            const empty = document.getElementById('empty-state');
+            grid.innerHTML = '';
+            
+            if (members.length === 0) {
+                empty.classList.remove('hidden');
+                return;
+            }
+            empty.classList.add('hidden');
+
+            const families = {};
+            members.forEach(m => {
+                if (!families[m.family_name]) families[m.family_name] = [];
+                families[m.family_name].push(m);
+            });
+
+            Object.entries(families).forEach(([familyName, members]) => {
+                const head = members.find(m => m.is_head) || members[0];
+                const familyPhoto = head.family_photo_url || 'https://via.placeholder.com/400x300?text=Family+Photo';
+                
+                const card = document.createElement('div');
+                card.className = 'family-card bg-white rounded-3xl p-4 flex items-center gap-5 cursor-pointer shadow-sm border border-slate-100 group';
+                card.onclick = () => openFamilyPanel(familyName, members);
+                
+                card.innerHTML = `
+                    <div class="relative w-20 h-20 rounded-2xl overflow-hidden bg-slate-100 flex-shrink-0 shadow-inner">
+                        <img src="${familyPhoto}" class="absolute inset-0 w-full h-full object-cover blur-sm opacity-30">
+                        <img src="${familyPhoto}" class="relative w-full h-full object-contain">
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <h4 class="font-bold text-slate-800 text-lg leading-tight truncate group-hover:text-accent transition-colors">${head.first_name}</h4>
+                        <p class="text-slate-400 font-bold text-[10px] uppercase tracking-widest mt-0.5">${familyName}</p>
+                        <div class="flex items-center gap-3 mt-2">
+                             <div class="px-2 py-0.5 rounded-lg bg-sky-50 text-[9px] font-black text-accent uppercase border border-sky-100">
+                                <i class="fas fa-users mr-1"></i> ${members.length} Members
+                             </div>
+                             <div class="text-[9px] font-bold text-slate-300 uppercase tracking-tighter">
+                                <i class="fas fa-pray mr-1"></i> ${head.prayer_group || 'No Group'}
+                             </div>
+                        </div>
+                    </div>
+                    <div class="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center text-slate-300 group-hover:bg-accent group-hover:text-white transition-all shadow-sm">
+                        <i class="fas fa-chevron-right text-xs"></i>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function openFamilyPanel(familyName, members) {
+            const backdrop = document.getElementById('family-panel-backdrop');
+            const panel = document.getElementById('family-panel');
+            const content = document.getElementById('family-panel-content');
+            
+            const head = members.find(m => m.is_head) || members[0];
+            const familyPhoto = head.family_photo_url || 'https://via.placeholder.com/400x300?text=No+Family+Photo';
+
+            content.innerHTML = `
+                <div class="relative h-64 sm:h-80 w-full bg-slate-900">
+                    <img src="${familyPhoto}" class="absolute inset-0 w-full h-full object-cover blur-3xl opacity-30">
+                    <img src="${familyPhoto}" class="relative w-full h-full object-contain">
+                    <div class="absolute inset-0 bg-gradient-to-t from-sky-50 via-transparent to-transparent"></div>
+                </div>
+                <div class="px-6 sm:px-12 pb-12 -mt-16 relative z-10">
+                    <div class="bg-white rounded-[2rem] p-6 sm:p-8 shadow-2xl shadow-blue-900/10 border border-white">
+                        <p class="text-accent font-black text-[10px] uppercase tracking-[0.4em] mb-2">The Family of</p>
+                        <h2 class="text-3xl sm:text-5xl font-black text-slate-800 tracking-tight leading-none mb-10">${familyName}</h2>
+                        
+                        <div class="space-y-4">
+                            <p class="text-[10px] font-black text-slate-300 uppercase tracking-widest pl-2">Members of this Household</p>
+                            <div class="grid gap-3">
+                                ${members.sort((a,b) => b.is_head - a.is_head).map(m => `
+                                    <div onclick="event.stopPropagation(); openContactModal(${JSON.stringify(m).replace(/"/g, '&quot;')})" 
+                                        class="group flex items-center gap-4 p-4 rounded-2xl bg-slate-50 hover:bg-white hover:shadow-xl hover:shadow-blue-900/5 hover:-translate-y-0.5 transition-all cursor-pointer border border-transparent hover:border-blue-100">
+                                        <div class="w-14 h-14 rounded-xl overflow-hidden bg-white shadow-sm ring-2 ring-white">
+                                             <img src="${m.photo_url || 'https://via.placeholder.com/150?text=Member'}" class="w-full h-full object-cover">
+                                        </div>
+                                        <div class="flex-1">
+                                            <div class="flex items-center gap-2">
+                                                <span class="font-bold text-slate-700">${m.first_name} ${m.last_name || ''}</span>
+                                                ${m.is_head ? '<span class="bg-amber-100 text-amber-600 text-[8px] font-black uppercase px-2 py-0.5 rounded-lg border border-amber-200">Head</span>' : ''}
+                                            </div>
+                                            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">${m.role || 'Member'}</p>
+                                        </div>
+                                        <div class="w-8 h-8 rounded-full bg-white flex items-center justify-center text-slate-300 group-hover:text-accent transition-colors shadow-sm">
+                                            <i class="fas fa-address-card text-xs"></i>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            backdrop.classList.remove('hidden');
+            backdrop.classList.add('flex');
+            setTimeout(() => {
+                backdrop.classList.replace('opacity-0', 'opacity-100');
+                panel.classList.replace('scale-95', 'scale-100');
+            }, 10);
+        }
+
+        function closeFamilyPanel() {
+            const backdrop = document.getElementById('family-panel-backdrop');
+            const panel = document.getElementById('family-panel');
+            backdrop.classList.replace('opacity-100', 'opacity-0');
+            panel.classList.replace('scale-100', 'scale-95');
+            setTimeout(() => {
+                backdrop.classList.add('hidden');
+                backdrop.classList.remove('flex');
+            }, 300);
+        }
+
+        function openContactModal(member) {
+            const modal = document.getElementById('contact-modal');
+            const container = document.getElementById('modal-container');
+            
+            document.getElementById('modal-photo').src = member.photo_url || 'https://via.placeholder.com/300?text=No+Photo';
+            document.getElementById('modal-photo-main').src = member.photo_url || 'https://via.placeholder.com/300?text=No+Photo';
+            document.getElementById('modal-name').innerText = `${member.first_name} ${member.last_name || ''}`;
+            document.getElementById('modal-role').innerText = member.role || 'Church Member';
+            
+            const callBtn = document.getElementById('modal-call');
+            const mailBtn = document.getElementById('modal-mail');
+            
+            if (member.phone) {
+                callBtn.href = `tel:${member.phone}`;
+                callBtn.classList.remove('hidden');
+            } else {
+                callBtn.classList.add('hidden');
+            }
+            
+            if (member.email) {
+                mailBtn.href = `mailto:${member.email}`;
+                mailBtn.classList.remove('hidden');
+            } else {
+                mailBtn.classList.add('hidden');
+            }
+            
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            setTimeout(() => {
+                modal.querySelector('.absolute').classList.replace('opacity-0', 'opacity-100');
+                container.classList.replace('opacity-0', 'opacity-100');
+                container.classList.replace('scale-95', 'scale-100');
+            }, 10);
+        }
+
+        function closeContactModal() {
+            const modal = document.getElementById('contact-modal');
+            const container = document.getElementById('modal-container');
+            modal.querySelector('.absolute').classList.replace('opacity-100', 'opacity-0');
+            container.classList.replace('opacity-100', 'opacity-0');
+            container.classList.replace('scale-100', 'scale-95');
+            setTimeout(() => modal.classList.add('hidden'), 300);
+        }
+
+        init();
+    </script>
+</body>
+</html>
